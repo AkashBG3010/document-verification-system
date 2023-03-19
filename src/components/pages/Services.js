@@ -20,7 +20,7 @@ export default function Services() {
       <option className="customOption" value="2">PAN Card</option>
       <option className="customOption" value="3">Driving Licence</option>
     </select>
-    <input className='serviceSelect' type="number" name="" placeholder="ID Namber" id="idNumber" minlength="12" maxlength="12"/>
+    <input className='serviceSelect' type="number" name="" placeholder="ID Namber" id="idNumber"/>
     <select className='serviceGender'>
       <option className="customOption" value="1">Male</option>
       <option className="customOption" checked value="2">Female</option>
