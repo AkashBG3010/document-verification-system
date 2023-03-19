@@ -2,7 +2,7 @@ import React from 'react';
 import '../../App.css';
 import './services.css'
 import './Services'
-import {upload, buttoncliked} from './UploadToS3'
+import {upload, buttoncliked} from './functions'
 
 export default function Services() {
 
@@ -20,7 +20,7 @@ export default function Services() {
       <option className="customOption" value="2">PAN Card</option>
       <option className="customOption" value="3">Driving Licence</option>
     </select>
-    <input className='serviceSelect' type="number" name="" placeholder="ID Namber" id="idNumber"/>
+    <input className='serviceSelect' type="number" name="" placeholder="ID Namber" id="idNumber" minlength="12" maxlength="12"/>
     <select className='serviceGender'>
       <option className="customOption" value="1">Male</option>
       <option className="customOption" checked value="2">Female</option>
@@ -28,7 +28,7 @@ export default function Services() {
     </select>
   </div>
   <div className='FileSubmit'>
-  <input type="file" id="myFile" onChange={upload} name="filename"/>
+  <input type="file" id="myFile" onChange={upload} name="filename" accept="image/png, image/jpeg, image/jpg" />
   </div>
   <div className='Validate'>
   <button onClick={buttoncliked} id="validate" className='btnLogin'>Validate</button>
