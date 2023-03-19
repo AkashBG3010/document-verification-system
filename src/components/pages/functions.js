@@ -1,11 +1,10 @@
 import { Upload } from "@aws-sdk/lib-storage";
 import { S3Client} from "@aws-sdk/client-s3";
 import { v4 as uuidv4 } from 'uuid';
-import * as AWS from "@aws-sdk/client-textract";
+import { TextractClient, AnalyzeIDCommand } from "@aws-sdk/client-textract";
 
-var textract = new AWS.Textract({apiVersion: '2018-06-27'});
 var firstName, lastName, idNumber, birthDate, fileName
-var userData = new Object();
+var userInputData = new Object();
 var s3BucketName = process.env.REACT_APP_S3_BUCKET_NAME
 var awsRegion = process.env.REACT_APP_AWS_REGION
 var credentials = {accessKeyId:process.env.REACT_APP_AWS_ACCESS_KEY_ID, secretAccessKey:process.env.REACT_APP_AWS_SECRET_ACCESS_KEY}
@@ -40,29 +39,29 @@ export const buttoncliked = () => {
     lastName=document.querySelector("#lastName").value
     idNumber=document.querySelector("#idNumber").value
     birthDate=document.querySelector("#birthDate").value
-    userData = { 
-      "firstName": firstName,
-      "lastName": lastName,
-      "idNumber": idNumber,
-      "birthDate": birthDate,
+    userInputData = { 
+      "FIRST_NAME": firstName,
+      "LAST_NAME": lastName,
+      "DOCUMENT_NUMBER": idNumber,
+      "DATE_OF_BIRTH": birthDate,
     };
-    console.log(userData)
+    console.log(userInputData);
+    console.log("Sending request to AWS textract...");
+    const client = new TextractClient({region:awsRegion, credentials:credentials});
     var params = {
-          DocumentPages:[
-            { 
-              S3Object:{Bucket:s3BucketName, Name:fileName}
-            }
-          ]
-        }; 
+      DocumentPages:[{
+        "S3Object": {
+          "Bucket": s3BucketName,
+          "Name": fileName,
+        }
+      }]
+    };
+    const command = new AnalyzeIDCommand(params);
     try {
-      textract.AnalyzeIDCommand(params, credentials, function(err, data) {
-        if (err) 
-          console.log(err, err.stack);
-        else
-          console.log(data);
-      });
+      const textractResponse = client.send(command)
+      console.log(textractResponse)
     }
     catch (e) {
       console.log(e);
-    }  
+    }
 }
