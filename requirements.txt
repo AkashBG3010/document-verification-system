@@ -1,0 +1,7 @@
+boto3==1.26.97
+Flask==2.2.3
+flask_mysqldb==1.0.1
+MySQL-python==1.2.5
+Pillow==9.4.0
+pytesseract==0.3.10
+python-dotenv==1.0.0
