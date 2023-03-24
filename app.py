@@ -12,6 +12,7 @@ from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 
 load_dotenv()
+region = environ.get('AWS_REGION')
 s3_bucket_name = environ.get('S3_BUCKET_NAME')
 db_host = environ.get('MYSQL_HOST')
 db_username = environ.get('MYSQL_USERNAME')
@@ -24,6 +25,7 @@ app = Flask(__name__)
 
 CORS(app)
 s3 = boto3.client('s3')
+textract = boto3.client('textract', region_name=region)
 app.config['MYSQL_HOST'] = db_host
 app.config['MYSQL_USER'] = db_username
 app.config['MYSQL_PASSWORD'] = db_password
@@ -116,16 +118,49 @@ def profile():
 
 @app.route('/data', methods=["POST"])
 def data():
-    data = request.json
-    if data['image_name'] != '':
-        s3.download_file(s3_bucket_name, data['image_name'], "data/"+data['image_name'])
-        path_to_image = "data/"+data['image_name']
-        imageData = pytesseract.image_to_string(Image.open(path_to_image))
-        os.remove(path_to_image)
-        return imageData, 200
+    userdata = request.json
+    if userdata['image_name'] != '':
+        #s3.download_file(s3_bucket_name, data['image_name'], "data/"+data['image_name'])
+        #path_to_image = "data/"+data['image_name']
+        #imageData = pytesseract.image_to_string(Image.open(path_to_image))
+        #os.remove(path_to_image)
+        response = textract.analyze_id(
+            DocumentPages=[
+                {
+                    "S3Object": {
+                        "Bucket": s3_bucket_name,
+                        "Name": userdata['image_name']
+                    }
+                },
+            ]
+        )
+        return_back_response = {}
+        for data in response['IdentityDocuments']:
+            for idf in data['IdentityDocumentFields']:
+                if 'first_name' in userdata and 'last_name' in userdata and 'id_number' in userdata and 'date_of_birth' in userdata:
+                    if (idf['Type']['Text'] == 'FIRST_NAME' and idf['ValueDetection']['Text'] == userdata['first_name'].upper()):
+                        return_back_response['first_name'] = idf['ValueDetection']['Text']
+                    elif idf['Type']['Text'] == 'LAST_NAME' and idf['ValueDetection']['Text'] == userdata['last_name'].upper():
+                        return_back_response['last_name'] = idf['ValueDetection']['Text']
+                    elif idf['Type']['Text'] == 'DOCUMENT_NUMBER':
+                        if idf['ValueDetection']['Text'] == userdata['id_number'] or idf['ValueDetection']['Text'] == 'UNKNOWN':
+                            return_back_response['id_number'] = idf['ValueDetection']['Text']
+                    elif idf['Type']['Text'] == 'DATE_OF_BIRTH' and idf['ValueDetection']['Text'] == userdata['date_of_birth']:
+                        return_back_response['date_of_birth'] = idf['ValueDetection']['Text']
+                    else:
+                        pass
+                else:
+                    return {"statusCode": 400, "message": "required details not passed"}
+
+        if 'first_name' in return_back_response and 'date_of_birth' in return_back_response and 'last_name' in return_back_response and 'id_number' in return_back_response:
+            verified_data=len(return_back_response)
+            return {"statusCode":200, "message": "Successfully Validated", "details": return_back_response, "verified_data_number":verified_data}
+        else:
+            verified_data=len(return_back_response)
+            return {"statusCode": 400, "message": "data not correct", "details": return_back_response, "verified_data_number":verified_data}
     else:
         response = 'emptyError'
-        return jsonify(statusMessage=response), 200
+        return response, 200
 
 if __name__ == "__main__":
     app.run("0.0.0.0", 80)
