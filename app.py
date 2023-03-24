@@ -1,13 +1,14 @@
-from flask import Flask, request, session, request
+from flask import Flask, request, session, request, jsonify
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import json
 import boto3
-from pytesseract import pytesseract
+from pytesseract import pytesseract, Output
 from PIL import Image
 from os import environ
 import os
+from flask_cors import CORS, cross_origin
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -21,6 +22,7 @@ pytesseract.tesseract_cmd =  r'/usr/bin/tesseract'
 
 app = Flask(__name__)
 
+CORS(app)
 s3 = boto3.client('s3')
 app.config['MYSQL_HOST'] = db_host
 app.config['MYSQL_USER'] = db_username
@@ -31,24 +33,29 @@ mysql = MySQL(app)
 
 @app.route("/")
 def healthcheck():
-    return "Application is healthy :)"
+    data='Success'
+    return jsonify(statusMessage=data), 200
 
 @app.route('/home')
 def home():
     if 'loggedin' in session:
         username = session['username']
-        return username
-    return '---Home Page---'
+        data = username
+        return jsonify(statusMessage=data), 200
+    else:
+        data = 'failed'
+        return jsonify(statusMessage=data), 200
 
 @app.route('/logout')
 def logout():
-   session.pop('loggedin', None)
-   session.pop('id', None)
-   return 'logout success!'
+    session.pop('loggedin', None)
+    session.pop('id', None)
+    data = 'success'
+    return jsonify(statusMessage=data), 200
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    msg = 'Something went wrong! Please try again'
+    data = 'failed'
     if request.method == 'POST' and 'username' in request.json and 'password' in request.json and 'email' in request.json:
         username = request.json['username']
         password = request.json['password']
@@ -57,24 +64,26 @@ def register():
         cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
         account = cursor.fetchone()
         if account:
-            msg = 'Account already exists!'
+            data = 'alreadyExists'
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            msg = 'Invalid email address!'
+            data = 'emailError'
         elif not re.match(r'[A-Za-z0-9]+', username):
-            msg = 'Username must contain only characters and numbers!'
+            data = 'usernameError'
+        elif not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', password):
+            data = 'passwordError'
         elif not username or not password or not email:
-            msg = 'Please fill out the form!'
+            data = 'emptyError'
         else:
             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             mysql.connection.commit()
-            msg = 'You have successfully registered!'
+            data = 'success'
     elif request.method == 'POST':
-        msg = 'Please fill the form completly!'
-    return msg
+        data = 'incompleteForm'
+    return jsonify(statusMessage=data), 200
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    msg = ''
+    msg = 'emptyError'
     if request.method == 'POST' and 'username' in request.json and 'password' in request.json:
         username = request.json['username']
         password = request.json['password']
@@ -85,10 +94,13 @@ def login():
             session['loggedin'] = True
             session['id'] = account['id']
             session['username'] = account['username']
-            return 'Logged in successfully!'
+            data = 'success'
+            return jsonify(statusMessage=data), 200
         else:
-            msg = 'Incorrect username/password!'
-    return msg
+            data = 'failed'
+            return jsonify(statusMessage=data), 200
+    else:
+        return jsonify(statusMessage=data), 200
 
 @app.route('/profile')
 def profile():
@@ -96,17 +108,24 @@ def profile():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        return account
-    return 'login again!'
+        data = 'success'
+        return jsonify(statusMessage=data), 200
+    else:
+        data = 'failed'
+        return jsonify(statusMessage=data), 200
 
 @app.route('/data', methods=["POST"])
 def data():
     data = request.json
-    s3.download_file(s3_bucket_name, data['image_name'], "data/"+data['image_name'])
-    path_to_image = "data/"+data['image_name']
-    response = pytesseract.image_to_string(Image.open(path_to_image))
-    os.remove(path_to_image)
-    return response
-    
+    if data['image_name'] != '':
+        s3.download_file(s3_bucket_name, data['image_name'], "data/"+data['image_name'])
+        path_to_image = "data/"+data['image_name']
+        imageData = pytesseract.image_to_string(Image.open(path_to_image))
+        os.remove(path_to_image)
+        return imageData, 200
+    else:
+        response = 'emptyError'
+        return jsonify(statusMessage=response), 200
+
 if __name__ == "__main__":
     app.run("0.0.0.0", 80)
