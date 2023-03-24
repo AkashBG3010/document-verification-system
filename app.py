@@ -2,7 +2,6 @@ from flask import Flask, request, session, request, jsonify
 from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
-import json
 import boto3
 from pytesseract import pytesseract, Output
 from PIL import Image
@@ -19,6 +18,7 @@ db_username = environ.get('MYSQL_USERNAME')
 db_password = environ.get('MYSQL_PASSWORD')
 db_name = environ.get('MYSQL_DB_NAME')
 app_secret_key = environ.get('APP_SECRET_KEY')
+port = environ.get('APP_PORT')
 pytesseract.tesseract_cmd =  r'/usr/bin/tesseract'
 
 app = Flask(__name__)
@@ -42,18 +42,15 @@ def healthcheck():
 def home():
     if 'loggedin' in session:
         username = session['username']
-        data = username
-        return jsonify(statusMessage=data), 200
+        return {"statusCode":200, "message": "success"}
     else:
-        data = 'failed'
-        return jsonify(statusMessage=data), 200
+        return {"statusCode":400, "message": "failed"}
 
 @app.route('/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
-    data = 'success'
-    return jsonify(statusMessage=data), 200
+    return {"statusCode":200, "message": "success"}
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
@@ -81,7 +78,7 @@ def register():
             data = 'success'
     elif request.method == 'POST':
         data = 'incompleteForm'
-    return jsonify(statusMessage=data), 200
+    return {"statusCode":200, "message": data}
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -96,13 +93,11 @@ def login():
             session['loggedin'] = True
             session['id'] = account['id']
             session['username'] = account['username']
-            data = 'success'
-            return jsonify(statusMessage=data), 200
+            return {"statusCode":200, "message": "success"}
         else:
-            data = 'failed'
-            return jsonify(statusMessage=data), 200
+            return {"statusCode":400, "message": "failed"}
     else:
-        return jsonify(statusMessage=data), 200
+        return {"statusCode":400, "message": msg}
 
 @app.route('/profile')
 def profile():
@@ -110,11 +105,9 @@ def profile():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        data = 'success'
-        return jsonify(statusMessage=data), 200
+        return {"statusCode":200, "message": "success"}
     else:
-        data = 'failed'
-        return jsonify(statusMessage=data), 200
+        return {"statusCode":400, "message": "failed"}
 
 @app.route('/data', methods=["POST"])
 def data():
@@ -142,6 +135,9 @@ def data():
                         return_back_response['first_name'] = idf['ValueDetection']['Text']
                     elif idf['Type']['Text'] == 'LAST_NAME' and idf['ValueDetection']['Text'] == userdata['last_name'].upper():
                         return_back_response['last_name'] = idf['ValueDetection']['Text']
+                    elif idf['Type']['Text'] == 'MIDDLE_NAME':
+                        if idf['ValueDetection']['Text'] == userdata['middle_name'].upper() or idf['ValueDetection']['Text'] == 'UNKNOWN':
+                            return_back_response['middle_name'] = idf['ValueDetection']['Text']
                     elif idf['Type']['Text'] == 'DOCUMENT_NUMBER':
                         if idf['ValueDetection']['Text'] == userdata['id_number'] or idf['ValueDetection']['Text'] == 'UNKNOWN':
                             return_back_response['id_number'] = idf['ValueDetection']['Text']
@@ -150,17 +146,16 @@ def data():
                     else:
                         pass
                 else:
-                    return {"statusCode": 400, "message": "required details not passed"}
+                    return {"statusCode": 400, "message": "Required details are not passed"}
 
         if 'first_name' in return_back_response and 'date_of_birth' in return_back_response and 'last_name' in return_back_response and 'id_number' in return_back_response:
             verified_data=len(return_back_response)
-            return {"statusCode":200, "message": "Successfully Validated", "details": return_back_response, "verified_data_number":verified_data}
+            return {"statusCode":200, "message": "Successfully validated", "details": return_back_response, "verified_data_number":verified_data}
         else:
             verified_data=len(return_back_response)
-            return {"statusCode": 400, "message": "data not correct", "details": return_back_response, "verified_data_number":verified_data}
+            return {"statusCode": 300, "message": "Data missmatch", "details": return_back_response, "verified_data_number":verified_data}
     else:
-        response = 'emptyError'
-        return response, 200
+        return {"statusCode":400, "message": "Empty data received"}
 
 if __name__ == "__main__":
-    app.run("0.0.0.0", 80)
+    app.run("0.0.0.0", port)
