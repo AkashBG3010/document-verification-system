@@ -3,11 +3,8 @@ from flask_mysqldb import MySQL
 import MySQLdb.cursors
 import re
 import boto3
-from pytesseract import pytesseract, Output
-from PIL import Image
 from os import environ
-import os
-from flask_cors import CORS, cross_origin
+from flask_cors import CORS
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -19,7 +16,6 @@ db_password = environ.get('MYSQL_PASSWORD')
 db_name = environ.get('MYSQL_DB_NAME')
 app_secret_key = environ.get('APP_SECRET_KEY')
 port = environ.get('APP_PORT')
-pytesseract.tesseract_cmd =  r'/usr/bin/tesseract'
 
 app = Flask(__name__)
 
@@ -36,25 +32,27 @@ mysql = MySQL(app)
 @app.route("/")
 def healthcheck():
     data='Success'
-    return jsonify(statusMessage=data), 200
+    return jsonify(statusCode=200, statusMessage=data)
 
 @app.route('/home')
 def home():
     if 'loggedin' in session:
         username = session['username']
-        return {"statusCode":200, "message": "success"}
+        message = 'success'
+        return jsonify(statusCode=200, statusMessage=message, userName=username)
     else:
-        return {"statusCode":400, "message": "failed"}
+        message = 'failed'
+        return jsonify(statusCode=400, statusMessage=message)
 
 @app.route('/logout')
 def logout():
     session.pop('loggedin', None)
     session.pop('id', None)
-    return {"statusCode":200, "message": "success"}
+    message = 'success'
+    return jsonify(statusCode=200, statusMessage=message)
 
 @app.route('/register', methods=['GET', 'POST'])
 def register():
-    data = 'failed'
     if request.method == 'POST' and 'username' in request.json and 'password' in request.json and 'email' in request.json:
         username = request.json['username']
         password = request.json['password']
@@ -63,26 +61,25 @@ def register():
         cursor.execute('SELECT * FROM accounts WHERE username = %s', (username,))
         account = cursor.fetchone()
         if account:
-            data = 'alreadyExists'
+            message = 'already exists'
         elif not re.match(r'[^@]+@[^@]+\.[^@]+', email):
-            data = 'emailError'
+            message = 'invalid email'
         elif not re.match(r'[A-Za-z0-9]+', username):
-            data = 'usernameError'
+            message = 'invalid username'
         elif not re.match(r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$', password):
-            data = 'passwordError'
+            message = 'invalid password'
         elif not username or not password or not email:
-            data = 'emptyError'
+            message = 'invalid input'
         else:
             cursor.execute('INSERT INTO accounts VALUES (NULL, %s, %s, %s)', (username, password, email,))
             mysql.connection.commit()
-            data = 'success'
+            message = 'success'
     elif request.method == 'POST':
-        data = 'incompleteForm'
-    return {"statusCode":200, "message": data}
+        message = 'invalid request'
+    return jsonify(statusCode=200, statusMessage=message)
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    msg = 'emptyError'
     if request.method == 'POST' and 'username' in request.json and 'password' in request.json:
         username = request.json['username']
         password = request.json['password']
@@ -93,11 +90,14 @@ def login():
             session['loggedin'] = True
             session['id'] = account['id']
             session['username'] = account['username']
-            return {"statusCode":200, "message": "success"}
+            message = 'success'
+            return jsonify(statusCode=200, statusMessage=message)
         else:
-            return {"statusCode":400, "message": "failed"}
+            message = 'incorrect'
+            return jsonify(statusCode=300, statusMessage=message)
     else:
-        return {"statusCode":400, "message": msg}
+        message = 'invalid request'
+        return jsonify(statusCode=400, statusMessage=message)
 
 @app.route('/profile')
 def profile():
@@ -105,18 +105,16 @@ def profile():
         cursor = mysql.connection.cursor(MySQLdb.cursors.DictCursor)
         cursor.execute('SELECT * FROM accounts WHERE id = %s', (session['id'],))
         account = cursor.fetchone()
-        return {"statusCode":200, "message": "success"}
+        message = 'success'
+        return jsonify(statusCode=200, statusMessage=message, accountId=account)
     else:
-        return {"statusCode":400, "message": "failed"}
+        message = 'failed'
+        return jsonify(statusCode=400, statusMessage=message)
 
 @app.route('/data', methods=["POST"])
 def data():
     userdata = request.json
-    if userdata['image_name'] != '':
-        #s3.download_file(s3_bucket_name, data['image_name'], "data/"+data['image_name'])
-        #path_to_image = "data/"+data['image_name']
-        #imageData = pytesseract.image_to_string(Image.open(path_to_image))
-        #os.remove(path_to_image)
+    if userdata['image_name']:
         response = textract.analyze_id(
             DocumentPages=[
                 {
@@ -146,16 +144,21 @@ def data():
                     else:
                         pass
                 else:
-                    return {"statusCode": 400, "message": "Required details are not passed"}
+                    message = 'missing input'
+                    return jsonify(statusCode=400, statusMessage=message)
 
         if 'first_name' in return_back_response and 'date_of_birth' in return_back_response and 'last_name' in return_back_response and 'id_number' in return_back_response:
             verified_data=len(return_back_response)
-            return {"statusCode":200, "message": "Successfully validated", "details": return_back_response, "verified_data_number":verified_data}
+            message = 'successfully validated'
+            return jsonify(statusCode=200, statusMessage=message, details=return_back_response, verified_data_number=verified_data)
         else:
             verified_data=len(return_back_response)
-            return {"statusCode": 300, "message": "Data missmatch", "details": return_back_response, "verified_data_number":verified_data}
+            message = 'data missmatch'
+            return jsonify(statusCode=200, statusMessage=message, details=return_back_response, verified_data_number=verified_data)
     else:
-        return {"statusCode":400, "message": "Empty data received"}
+        message = 'invalid request'
+        return jsonify(statusCode=400, statusMessage=message)
+
 
 if __name__ == "__main__":
     app.run("0.0.0.0", port)
