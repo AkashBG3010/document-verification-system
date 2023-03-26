@@ -52,7 +52,7 @@ function Navbar() {
             </li>
             <li>
               <Link
-                to='/sign-up'
+                to='/signin'
                 className='nav-links-mobile'
                 onClick={closeMobileMenu}
               >

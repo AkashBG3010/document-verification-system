@@ -15,6 +15,7 @@
     font-size: 50px;
     text-transform: uppercase;
     font-weight: 500;
+    height: max-content;
   }
 
   .btnLogin:hover{

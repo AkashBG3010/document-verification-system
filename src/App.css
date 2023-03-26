@@ -8,7 +8,7 @@
 .home,
 .services,
 .products,
-.sign-up {
+.signin {
   display: flex;
   height: 90vh;
   align-items: center;
@@ -17,7 +17,7 @@
 }
 
 .services {
-  background-image: url('../public/images/img-1.jpg');
+  background-image: url('../public/images/img-7.jpg');
   background-position: center;
   background-size: cover;
   background-repeat: no-repeat;
@@ -25,8 +25,8 @@
   font-size: 100px;
 }
 
-.products {
-  background-image: url('../public/images/img-2.jpg');
+.register {
+  background-image: url('../public/images/img-4.jpg');
   background-position: center;
   background-size: fill;
   background-repeat: no-repeat;
@@ -34,7 +34,7 @@
   font-size: 100px;
 }
 
-.sign-up {
+.signin {
   background-image: url('../public/images/img-3.jpg');
   background-position: center;
   background-size: cover;
