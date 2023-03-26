@@ -1,2 +1,4 @@
 README.md
 .gitignore
+.env
+requirements-dev.txt
