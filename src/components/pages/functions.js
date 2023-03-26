@@ -44,3 +44,11 @@ export const fetchData = async (formData) => {
   const response = await axios.post(`http://${backend_host}/data`, userData, {headers: "Content-Type: application/json"})
   return response.data
   }
+
+export const LoginData = async (LoginFormData) => {
+    const userData = LoginFormData
+    console.log("calling backend..");
+    console.log("with Login data: "+userData);
+    const response = await axios.post(`http://${backend_host}/login`, userData, {headers: "Content-Type: application/json"})
+    return response.data
+  }
