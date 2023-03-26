@@ -114,7 +114,7 @@ def profile():
 @app.route('/data', methods=["POST"])
 def data():
     userdata = request.json
-    if userdata['image_name']:
+    if 'image_name' in userdata and 'first_name' in userdata and 'middle_name' in userdata and 'last_name' in userdata and 'id_number' in userdata and 'date_of_birth' in userdata:
         response = textract.analyze_id(
             DocumentPages=[
                 {
@@ -128,24 +128,20 @@ def data():
         return_back_response = {}
         for data in response['IdentityDocuments']:
             for idf in data['IdentityDocumentFields']:
-                if 'first_name' in userdata and 'last_name' in userdata and 'id_number' in userdata and 'date_of_birth' in userdata:
-                    if (idf['Type']['Text'] == 'FIRST_NAME' and idf['ValueDetection']['Text'] == userdata['first_name'].upper()):
-                        return_back_response['first_name'] = idf['ValueDetection']['Text']
-                    elif idf['Type']['Text'] == 'LAST_NAME' and idf['ValueDetection']['Text'] == userdata['last_name'].upper():
-                        return_back_response['last_name'] = idf['ValueDetection']['Text']
-                    elif idf['Type']['Text'] == 'MIDDLE_NAME':
-                        if idf['ValueDetection']['Text'] == userdata['middle_name'].upper() or idf['ValueDetection']['Text'] == 'UNKNOWN':
-                            return_back_response['middle_name'] = idf['ValueDetection']['Text']
-                    elif idf['Type']['Text'] == 'DOCUMENT_NUMBER':
-                        if idf['ValueDetection']['Text'] == userdata['id_number'] or idf['ValueDetection']['Text'] == 'UNKNOWN':
-                            return_back_response['id_number'] = idf['ValueDetection']['Text']
-                    elif idf['Type']['Text'] == 'DATE_OF_BIRTH' and idf['ValueDetection']['Text'] == userdata['date_of_birth']:
-                        return_back_response['date_of_birth'] = idf['ValueDetection']['Text']
-                    else:
-                        pass
+                if (idf['Type']['Text'] == 'FIRST_NAME' and idf['ValueDetection']['Text'] == userdata['first_name'].upper()):
+                    return_back_response['first_name'] = idf['ValueDetection']['Text']
+                elif idf['Type']['Text'] == 'LAST_NAME' and idf['ValueDetection']['Text'] == userdata['last_name'].upper():
+                    return_back_response['last_name'] = idf['ValueDetection']['Text']
+                elif idf['Type']['Text'] == 'MIDDLE_NAME':
+                    if idf['ValueDetection']['Text'] == userdata['middle_name'].upper() or idf['ValueDetection']['Text'] == 'UNKNOWN':
+                        return_back_response['middle_name'] = idf['ValueDetection']['Text']
+                elif idf['Type']['Text'] == 'DOCUMENT_NUMBER':
+                    if idf['ValueDetection']['Text'] == userdata['id_number'] or idf['ValueDetection']['Text'] == 'UNKNOWN':
+                        return_back_response['id_number'] = idf['ValueDetection']['Text']
+                elif idf['Type']['Text'] == 'DATE_OF_BIRTH' and idf['ValueDetection']['Text'] == userdata['date_of_birth']:
+                    return_back_response['date_of_birth'] = idf['ValueDetection']['Text']
                 else:
-                    message = 'missing input'
-                    return jsonify(statusCode=400, statusMessage=message)
+                    pass
 
         if 'first_name' in return_back_response and 'date_of_birth' in return_back_response and 'last_name' in return_back_response and 'id_number' in return_back_response:
             verified_data=len(return_back_response)
