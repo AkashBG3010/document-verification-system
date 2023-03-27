@@ -6,6 +6,7 @@ import boto3
 from os import environ
 from flask_cors import CORS
 from dotenv import load_dotenv
+from dateutil.parser import parse
 
 load_dotenv()
 region = environ.get('AWS_REGION')
@@ -138,7 +139,7 @@ def data():
                 elif idf['Type']['Text'] == 'DOCUMENT_NUMBER':
                     if idf['ValueDetection']['Text'] == userdata['id_number'] or idf['ValueDetection']['Text'] == 'UNKNOWN':
                         return_back_response['id_number'] = idf['ValueDetection']['Text']
-                elif idf['Type']['Text'] == 'DATE_OF_BIRTH' and idf['ValueDetection']['Text'] == userdata['date_of_birth']:
+                elif idf['Type']['Text'] == 'DATE_OF_BIRTH' and parse(idf['ValueDetection']['Text']) == parse(userdata['date_of_birth']):
                     return_back_response['date_of_birth'] = idf['ValueDetection']['Text']
                 else:
                     pass
