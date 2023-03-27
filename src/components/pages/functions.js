@@ -32,31 +32,28 @@ export const upload = (file)=>{
     Uploads3.done();
   } 
   catch (e) {
+    alert("please retry again!");
     console.log(e);
   }
 }
 
 export const fetchData = async (formData) => {
-  console.log("filename: "+fileName)
   const userData = {...formData, image_name: fileName}
-  console.log("calling backend..");
-  console.log("with data: "+userData);
+  console.log(`calling backend with data: ${userData}`);
   const response = await axios.post(`http://${backend_host}/data`, userData, {headers: "Content-Type: application/json"})
   return response.data
   }
 
 export const LoginData = async (LoginFormData) => {
     const userData = LoginFormData
-    console.log("calling backend..");
-    console.log("with Login data: "+userData);
+    console.log(`calling backend with Login data: ${userData}`);
     const response = await axios.post(`http://${backend_host}/login`, userData, {headers: "Content-Type: application/json"})
     return response.data
   }
 
-  export const RegisterData = async (RegisterFormData) => {
-    const newUserData = RegisterFormData
-    console.log("calling backend..");
-    console.log("with New User data: "+newUserData);
-    const response = await axios.post(`http://${backend_host}/register`, newUserData, {headers: "Content-Type: application/json"})
-    return response.data
-  }
+export const RegisterData = async (RegisterFormData) => {
+  const newUserData = RegisterFormData
+  console.log(`calling backend with New User data: ${newUserData}`);
+  const response = await axios.post(`http://${backend_host}/register`, newUserData, {headers: "Content-Type: application/json"})
+  return response.data
+}

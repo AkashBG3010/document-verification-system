@@ -13,8 +13,20 @@ export default function signUp() {
   const RegisterBtnClicked = async () => {
     
     userName=document.querySelector("#userName").value;
+    if (userName === "") {
+      alert("Username must be filled out");
+      return false;
+    }
     password=document.querySelector("#password").value;
+    if (password === "") {
+      alert("Password must be filled out");
+      return false;
+    }
     emailId=document.querySelector("#emailId").value;
+    if (emailId === "") {
+      alert("Email Id must be filled out");
+      return false;
+    }
     userRegisterData = { 
       username: userName,
       password: password,
@@ -59,7 +71,6 @@ export default function signUp() {
           }
       }
       catch (error) {
-        console.error("Something bad happened!");
         console.error(error);
         alert(`Something bad happened!\n
           error:${error}`)
@@ -71,7 +82,7 @@ export default function signUp() {
       <input type="text" name="" placeholder="Username" id="userName" />
       <input type="password" name=""  placeholder="Password" id="password"/>
       <input type="text" name=""  placeholder="Email Id" id="emailId"/>
-      <Link  onClick={RegisterBtnClicked} className='btnLogin'>Sign Up</Link>
+      <Link  onClick={RegisterBtnClicked} className='btnLogin' to="#">Sign Up</Link>
     </form>
   </div>;
 }

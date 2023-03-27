@@ -11,19 +11,36 @@ export default function Services() {
 
   const useButtoncliked = async () => {
     firstName=document.querySelector("#firstName").value;
+    if (firstName === "") {
+      alert("Firstname must be filled out");
+      return false;
+    }
     lastName=document.querySelector("#lastName").value;
+    if (lastName === "") {
+      alert("Lastname must be filled out");
+      return false;
+    }
     idNumber=document.querySelector("#idNumber").value;
+    if (idNumber === "") {
+      alert("Id Number must be filled out");
+      return false;
+    }
     birthDate=document.querySelector("#birthDate").value;
+    if (birthDate === "") {
+      alert("Birth Date must be filled out");
+      return false;
+    }
+    const [year, month, day] =  birthDate.split('-')
+    const DOB = `${year}/${month}/${day}`;
     userInputData = { 
       first_name: firstName,
       last_name: lastName,
       middle_name: "",
       id_number: idNumber,
-      date_of_birth: birthDate,
+      date_of_birth: DOB,
     };
     try {
       const output = await fetchData(userInputData)
-      console.log(output)
       if(output.statusCode === 200 && output.statusMessage === "successfully validated")
           {
             alert(`Verification Successful!\n 
@@ -57,7 +74,6 @@ export default function Services() {
           }
     }
     catch (error) {
-      console.error("Something bad happened!");
       console.error(error);
       alert(`Something bad happened!\n
         error:${error}`)

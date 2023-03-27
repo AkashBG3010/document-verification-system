@@ -17,11 +17,18 @@ export default function signIn() {
     
     userName=document.querySelector("#userName").value;
     password=document.querySelector("#password").value;
+    if (userName === "") {
+      alert("Username must be filled out");
+      return false;
+    }
+    if (password === "") {
+      alert("Password must be filled out");
+      return false;
+    }
     userLoginData = { 
       username: userName,
       password: password
     };
-    console.log(`Login data displayed ${userLoginData}`)
     try{
       const LoginOutput = await LoginData(userLoginData)
       if(LoginOutput.statusCode === 200 && LoginOutput.statusMessage === "success")
@@ -43,7 +50,6 @@ export default function signIn() {
           }
       }
       catch (error) {
-        console.error("Something bad happened!");
         console.error(error);
         alert(`Something bad happened!\n
           error:${error}`)
@@ -54,8 +60,8 @@ export default function signIn() {
       <h1 className='boxH1'>WELCOME BACK!</h1>
       <input type="text" name="" placeholder="Username" id="userName" />
       <input type="password" name=""  placeholder="Password" id="password"/>
-      <Link  onClick={LoginBtnClicked} className='btnLogin'>Sign In </Link>
-      <Link  onClick={RegisterBtnClicked} className='btnRedirectSignup'>Not registered? Sign Up here!</Link>
+      <Link  onClick={LoginBtnClicked} className='btnLogin' to="#">Sign In </Link>
+      <Link  onClick={RegisterBtnClicked} className='btnRedirectSignup' to="#">Not registered? Sign Up here!</Link>
     </form>
   </div>;
 }
